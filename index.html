@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>PSI Level Assignment 5</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.css">
+    <style>
+        #map {
+            width: 100%;
+            height: 680px;
+        }
+    </style>
+    <div id="map"></div>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.js"></script>
+    <script>
+
+        // Load api data
+        let url = "https://api.data.gov.sg/v1/environment/psi";
+        fetch(url)
+            .then(result => result.json())
+            .then((output) => {
+
+
+                //Receive data
+                let region_metadata = output['region_metadata'];
+                let psi_data = output['items'][0]['readings']['psi_twenty_four_hourly'];
+
+                //Leaflet tiles
+                let tiles = new L.tileLayer('https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png', {
+                    detectRetina: true,
+                    maxZoom: 18,
+                    minZoom: 11,
+                    //Do not remove this attribution
+                    attribution: '<img src="https://docs.onemap.sg/maps/images/oneMap64-01.png" style="height:20px;width:20px;">' +
+                        'New OneMap | Map data © contributors, <a href="http://SLA.gov.sg">Singapore Land Authority</a>'
+                });
+
+
+                //Leaflet map
+                let map = new L.Map("map", {
+                    center: [1.347833, 103.809357],
+                    zoom: 12,
+                    maxBounds: L.latLngBounds(L.latLng(1.1, 103.5), L.latLng(1.5, 104.3))
+                })
+                    .addLayer(tiles);
+
+                //region_metadata containing name of region with longtitude and latitude
+                for (const item of region_metadata) {
+
+                    lat_long_array = [item['label_location']['latitude'], item['label_location']['longitude']];
+                    var psi_value = psi_data[item['name']];
+
+                    //Circle Marker
+                    var circle = L.circleMarker(lat_long_array, {
+                        radius: psi_value * 1.4,
+                        opacity: .8,
+                        fillOpacity: 0.2,
+                        color: "blue"
+
+                    });
+
+
+                    // Marker
+                    var markers = L.marker(lat_long_array, {
+                        icon: new L.DivIcon({
+                            html: '<div class="txt">' + psi_data[item['name']] + '</div>',
+                            className: 'circle-with-txt'
+                        })
+
+                    });
+
+                    // Combine the 2 markers
+                    var result = L.layerGroup([circle, markers]);
+
+                    // Add the marker result to the map
+                    result.addTo(map);
+                };
+
+
+            });
+
+
+
+    </script>
+</body>
+</html>
